@@ -1,0 +1,2 @@
+extrn length_string
+extrn number_to_string

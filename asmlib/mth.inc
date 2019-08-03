@@ -1,0 +1,2 @@
+extrn factorial
+extrn fibonacci
