@@ -6,6 +6,9 @@ public printf
 public input_string
 public print_string
 public print_number
+public print_hex
+public print_oct
+public print_bin
 public print_char
 
 section '.fmt_printf' executable
@@ -51,6 +54,12 @@ printf:
 		je .print_char
 		cmp [rax], byte 'd'
 		je .print_number
+		cmp [rax], byte 'x'
+		je .print_hex
+		cmp [rax], byte 'o'
+		je .print_oct
+		cmp [rax], byte 'b'
+		je .print_bin
 		jmp .print_another_char
 	.print_string:
 		mov rax, [rsp+rbx]
@@ -63,6 +72,18 @@ printf:
 	.print_number:
 		mov rax, [rsp+rbx]
 		call print_number
+		jmp .shift_stack
+	.print_hex:
+		mov rax, [rsp+rbx]
+		call print_hex
+		jmp .shift_stack
+	.print_oct:
+		mov rax, [rsp+rbx]
+		call print_oct
+		jmp .shift_stack
+	.print_bin:
+		mov rax, [rsp+rbx]
+		call print_bin
 		jmp .shift_stack
 	.print_another_char:
 		push rax
@@ -152,6 +173,131 @@ print_number:
 		cmp rax, 0
 		jle .print_iter
 		mov rcx, 10
+		xor rdx, rdx
+		div rcx
+		add rdx, '0'
+		push rdx
+		inc rbx
+		jmp .next_iter
+	.print_iter:
+		cmp rbx, 0
+		jle .close
+		pop rax
+		call print_char
+		dec rbx
+		jmp .print_iter
+	.close:
+		pop rdx
+		pop rcx
+		pop rbx
+		pop rax
+		ret
+
+section '.fmt_print_hex' executable
+; | input
+; rax = number
+print_hex:
+	push rax
+	push rbx
+	push rcx
+	push rdx
+	xor rbx, rbx
+	push rax
+	mov rax, '0'
+	call print_char
+	mov rax, 'x'
+	call print_char
+	pop rax
+	.next_iter:
+		cmp rax, 0
+		jle .print_iter
+		mov rcx, 16
+		xor rdx, rdx
+		div rcx
+		cmp rdx, 10
+		jl .add_num
+	.add_char:
+		sub rdx, 10
+		add rdx, 'A'
+		jmp .prev_next_iter
+	.add_num:
+		add rdx, '0'
+		jmp .prev_next_iter
+	.prev_next_iter:
+		push rdx
+		inc rbx
+		jmp .next_iter
+	.print_iter:
+		cmp rbx, 0
+		jle .close
+		pop rax
+		call print_char
+		dec rbx
+		jmp .print_iter
+	.close:
+		pop rdx
+		pop rcx
+		pop rbx
+		pop rax
+		ret
+
+section '.fmt_print_oct' executable
+; | input
+; rax = number
+print_oct:
+	push rax
+	push rbx
+	push rcx
+	push rdx
+	xor rbx, rbx
+	push rax
+	mov rax, '0'
+	call print_char
+	pop rax
+	.next_iter:
+		cmp rax, 0
+		jle .print_iter
+		mov rcx, 8
+		xor rdx, rdx
+		div rcx
+		add rdx, '0'
+		push rdx
+		inc rbx
+		jmp .next_iter
+	.print_iter:
+		cmp rbx, 0
+		jle .close
+		pop rax
+		call print_char
+		dec rbx
+		jmp .print_iter
+	.close:
+		pop rdx
+		pop rcx
+		pop rbx
+		pop rax
+		ret
+
+
+section '.fmt_print_bin' executable
+; | input
+; rax = number
+print_bin:
+	push rax
+	push rbx
+	push rcx
+	push rdx
+	xor rbx, rbx
+	push rax
+	mov rax, '0'
+	call print_char
+	mov rax, 'b'
+	call print_char
+	pop rax
+	.next_iter:
+		cmp rax, 0
+		jle .print_iter
+		mov rcx, 2
 		xor rdx, rdx
 		div rcx
 		add rdx, '0'
