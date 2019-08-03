@@ -132,7 +132,6 @@ input_string:
 		inc rcx
 		jmp .next_iter
 	.close:
-		inc rcx
 		mov [rcx], byte 0
 		pop rbx
 		pop rax
