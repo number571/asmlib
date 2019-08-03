@@ -1,6 +1,7 @@
 format ELF64
 
 public length_string
+public string_to_number
 public number_to_string
 
 section '.str_length_string' executable
@@ -9,15 +10,50 @@ section '.str_length_string' executable
 ; | output
 ; rbx = length
 length_string:
-	push rax
 	xor rbx, rbx
 	.next_iter:
-		cmp [rax], byte 0
+		cmp [rax+rbx], byte 0
 		je .close
 		inc rbx
-		inc rax
 		jmp .next_iter
 	.close:
+		ret
+
+section '.str_string_to_number' executable
+; | input
+; rax = string
+; | output
+; rbx = number
+string_to_number:
+	push rax
+	push rcx
+	push rdx
+	xor rdx, rdx
+	.next_iter:
+		cmp [rax], byte 0
+		jle .next_step
+		movzx rbx, byte[rax]
+		sub rbx, '0'
+		push rbx
+		inc rdx
+		inc rax
+		jmp .next_iter
+	.next_step:
+		xor rax, rax
+		mov rcx, 1
+	.to_number:
+		cmp rdx, 0
+		jle .close
+		pop rbx
+		imul rbx, rcx
+		imul rcx, 10
+		add rax, rbx
+		dec rdx
+		jmp .to_number
+	.close:
+		mov rbx, rax
+		pop rdx
+		pop rcx
 		pop rax
 		ret
 
@@ -33,7 +69,7 @@ number_to_string:
 	mov rcx, rbx
 	.next_iter:
 		cmp rbx, 0
-		jle .copy_number
+		jle .to_string
 		push rcx
 		mov rcx, 10
 		xor rdx, rdx
@@ -43,14 +79,14 @@ number_to_string:
 		push rdx
 		dec rbx
 		jmp .next_iter
-	.copy_number:
+	.to_string:
 		cmp rcx, 0
 		jle .close
 		pop rax
 		mov [rsi], rax
 		inc rsi
 		dec rcx
-		jmp .copy_number
+		jmp .to_string
 	.close:
 		mov [rsi], byte 0x0
 		pop rsi
