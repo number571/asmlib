@@ -1,8 +1,10 @@
 extrn printf
 extrn input_string
+extrn input_number
 extrn print_string
 extrn print_number
 extrn print_hex
 extrn print_oct
 extrn print_bin
 extrn print_char
+extrn print_line
