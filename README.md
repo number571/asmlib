@@ -15,40 +15,17 @@ format ELF64
 public _start
 
 include "asmlib/fmt.inc"
-include "asmlib/str.inc"
+include "asmlib/mth.inc"
 include "asmlib/sys.inc"
-
-section '.bss' writable
-	buffsize equ 20
-	buff1 rb buffsize
-	buff2 rb buffsize
-
-section '.data' writable
-	fmt db "[%b + %o = %x]", 0xA, 0
 
 section '.text' executable 
 _start:
-	mov rbx, buffsize
+    mov rax, 6
+    call factorial
+    call print_number
+    call print_line
+    call exit
 
-	mov rax, buff1
-	call input_string
-	call string_to_number
-	mov rdx, rax
-
-	mov rax, buff2
-	call input_string
-	call string_to_number
-	mov rcx, rax
-
-	mov rbx, rcx
-	add rbx, rdx
-
-	push rbx
-	push rcx
-	push rdx
-	mov rax, fmt
-	call printf
-	call exit
 ```
 
 ### Compile and Run
@@ -58,7 +35,5 @@ $ ld main.o asmlib/fmt.o asmlib/str.o asmlib/sys.o asmlib/mth.o -o main
 $ ./main
 $ # or just use Makefile
 $ # make
-	> 10
-	> 20
-	> [0b1010 + 024 = 0x1E]
+> 720
 ```
