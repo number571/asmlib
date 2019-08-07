@@ -6,6 +6,7 @@ public printf
 public input_string
 public input_number
 public print_string
+public print_bytes
 public print_number
 public print_hex
 public print_oct
@@ -14,8 +15,8 @@ public print_char
 public print_line
 
 section '.fmt_bss' writable
-    fmt_buff_size equ 20
-    fmt_buffer rb fmt_buff_size
+    fmt_buffer_size equ 20
+    fmt_buffer rb fmt_buffer_size
 
 section '.fmt_printf' executable
 ; | input
@@ -151,7 +152,7 @@ section '.fmt_input_number' executable
 input_number:
     push rbx
     mov rax, fmt_buffer
-    mov rbx, fmt_buff_size
+    mov rbx, fmt_buffer_size
     call input_string
     call string_to_number
     mov rax, rbx
@@ -167,9 +168,11 @@ print_string:
     push rcx
     push rdx
 
+    push rax
     call length_string
-    mov rdx, rbx
-    mov rcx, rax
+
+    mov rdx, rax
+    pop rcx
     mov rax, 4
     mov rbx, 1
     int 0x80
@@ -179,6 +182,42 @@ print_string:
     pop rbx
     pop rax
     ret
+
+section '.fmt_print_bytes' executable
+; | input 
+; rax = buffer
+; rbx = length
+print_bytes:
+    push rax
+    push rbx
+    push rcx
+    xor rcx, rcx
+    push rax
+    mov rax, '['
+    call print_char
+    pop rax
+    .next_iter:
+        cmp rcx, rbx
+        jge .close
+        push rax
+        mov rax, ' '
+        call print_char
+        pop rax
+        push rax
+        movsx rax, byte[rax+rcx]
+        call print_number
+        pop rax
+        inc rcx
+        jmp .next_iter
+    .close:
+        mov rax, ' '
+        call print_char
+        mov rax, ']'
+        call print_char
+        pop rcx
+        pop rbx
+        pop rax
+        ret
 
 section '.fmt_print_number' executable
 ; | input
@@ -297,7 +336,6 @@ print_oct:
         pop rbx
         pop rax
         ret
-
 
 section '.fmt_print_bin' executable
 ; | input
