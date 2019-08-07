@@ -5,6 +5,8 @@
 ```
 $ cd asmlib/
 $ fasm fmt.asm && fasm mth.asm && fasm str.asm && fasm sys.asm
+$ # or just use Makefile
+$ # make compile
 ```
 
 ### Example
@@ -30,15 +32,13 @@ _start:
 
 	mov rax, buff1
 	call input_string
+	call string_to_number
+	mov rdx, rax
+
 	mov rax, buff2
 	call input_string
-
-	mov rax, buff1
 	call string_to_number
-	mov rdx, rbx
-	mov rax, buff2
-	call string_to_number
-	mov rcx, rbx
+	mov rcx, rax
 
 	mov rbx, rcx
 	add rbx, rdx
@@ -58,7 +58,7 @@ $ ld main.o asmlib/fmt.o asmlib/str.o asmlib/sys.o asmlib/mth.o -o main
 $ ./main
 $ # or just use Makefile
 $ # make
-> 10
-> 20
-> [0b1010 + 024 = 0x1E]
+	> 10
+	> 20
+	> [0b1010 + 024 = 0x1E]
 ```
