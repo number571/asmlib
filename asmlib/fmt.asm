@@ -4,12 +4,18 @@ include "str.inc"
 
 public printf
 public input_string
+public input_number
 public print_string
 public print_number
 public print_hex
 public print_oct
 public print_bin
 public print_char
+public print_line
+
+section '.fmt_bss' writable
+	fmt_buff_size equ 20
+	fmt_buffer rb fmt_buff_size
 
 section '.fmt_printf' executable
 ; | input
@@ -136,6 +142,19 @@ input_string:
 		pop rbx
 		pop rax
 		ret	
+
+section '.fmt_input_number' executable
+; | output
+; rax = number
+input_number:
+	push rbx
+	mov rax, fmt_buffer
+	mov rbx, fmt_buff_size
+	call input_string
+	call string_to_number
+	mov rax, rbx
+	pop rbx
+	ret
 
 section '.fmt_print_string' executable
 ; | input
@@ -334,4 +353,10 @@ print_char:
 	pop rax
 	pop rcx
 	pop rdx
+	ret
+
+section '.fmt_print_line' executable
+print_line:
+	mov rax, 0xA
+	call print_char
 	ret
