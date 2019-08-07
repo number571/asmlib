@@ -2,6 +2,7 @@ extrn printf
 extrn input_string
 extrn input_number
 extrn print_string
+extrn print_bytes
 extrn print_number
 extrn print_hex
 extrn print_oct
