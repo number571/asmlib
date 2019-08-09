@@ -1,6 +1,10 @@
 extrn fcreate
+extrn fcreatea
 extrn fopen
+extrn fopenm
 extrn fread
+extrn freadp
 extrn fwrite
+extrn fwritep
 extrn fclose
 extrn exit
