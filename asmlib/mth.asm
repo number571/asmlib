@@ -1,7 +1,34 @@
 format ELF64
 
+public gcd
 public factorial
 public fibonacci
+
+section '.mth_gcd' executable
+; | input
+; rax = number 1
+; rbx = number 2
+; | output
+; rax = number
+gcd:
+    push rbx
+    push rcx
+    push rdx
+    .next_iter:
+        cmp rbx, 0
+        je .close
+        push rbx
+        xor rdx, rdx
+        div rbx
+        mov rbx, rdx
+        pop rax
+        jmp .next_iter
+    .close:
+        pop rdx
+        pop rcx
+        pop rbx
+        ret
+
 
 section '.mth_factorial' executable
 ; | input
