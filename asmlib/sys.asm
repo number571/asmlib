@@ -1,11 +1,16 @@
 format ELF64
 
-include "sys.equ"
+include "sys_equ.inc"
+include "sys_prv.inc"
 
 public fcreate
+public fcreatea
 public fopen
+public fopenm
 public fread
+public freadp
 public fwrite
+public fwritep
 public fclose
 public exit
 
@@ -16,13 +21,19 @@ section '.sys_fcreate' executable
 ; rax = descriptor
 fcreate:
     push rbx
-    push rcx
-    mov rbx, rax
-    mov rax, sys_creat
-    mov rcx, 777o
-    int 0x80
-    pop rcx
+    mov rbx, 777o
+    call create
     pop rbx
+    ret
+
+section '.sys_fcreatea' executable
+; | input
+; rax = filename
+; rbx = access rights
+; | output
+; rax = descriptor
+fcreatea:
+    call create
     ret
 
 section '.sys_fopen' executable
@@ -32,16 +43,19 @@ section '.sys_fopen' executable
 ; rax = descriptor
 fopen:
     push rbx
-    push rcx
-    mov rbx, rax
-    mov rax, sys_open
-    mov rcx, sys_rwx_rdwr
-    ; 0 = O_RDONLY
-    ; 1 = O_WRONLY
-    ; 2 = O_RDWR
-    int 0x80
-    pop rcx
+    mov rbx, sys_rwx_rdwr
+    call open
     pop rbx
+    ret
+
+section '.sys_fopenm' executable
+; | input
+; rax = filename
+; rbx = mode
+; | output
+; rax = descriptor
+fopenm:
+    call open
     ret
 
 section '.sys_fread' executable
@@ -50,61 +64,46 @@ section '.sys_fread' executable
 ; rbx = buffer
 ; rcx = buffer size
 fread:
-    push rax
-    push rbx
-    push rcx
     push rdx
-    mov rdx, rcx
-    mov rcx, rbx
-    mov rbx, rax
-    mov rax, sys_read
-    int 0x80
+    mov rdx, 0
+    call seek
+    call read
     pop rdx
-    pop rcx
-    pop rbx
-    pop rax
+    ret
+
+section '.sys_freadp' executable
+; | input
+; rax = descriptor
+; rbx = buffer
+; rcx = buffer size
+; rdx = position
+freadp:
+    call seek
+    call read
     ret
 
 section '.sys_fwrite' executable
 ; | input
 ; rax = descriptor
-; rbx = string
-; rcx = length
+; rbx = buffer
+; rcx = buffer size
 fwrite:
-    push rax
-    push rbx
-    push rcx
     push rdx
-
-    push rax
-    push rbx
-    push rcx
-    push rdx
-
-    mov rbx, rax
-    mov rax, sys_lseek
-    mov rcx, 0 ; move cursor
-    mov rdx, sys_seek_set
-    ; SEEK_SET = 0
-    ; SEEK_CUR = 1
-    ; SEEK_END = 2
-    int 0x80
-
+    mov rdx, 0
+    call seek
+    call write
     pop rdx
-    pop rcx
-    pop rbx
-    pop rax
+    ret
 
-    mov rdx, rcx
-    mov rcx, rbx
-    mov rbx, rax
-    mov rax, sys_write
-    int 0x80
-
-    pop rdx
-    pop rcx
-    pop rbx
-    pop rax
+section '.sys_fwritep' executable
+; | input
+; rax = descriptor
+; rbx = buffer
+; rcx = buffer size
+; rdx = position
+fwritep:
+    call seek
+    call write
     ret
 
 section '.sys_fclose' executable
@@ -114,7 +113,7 @@ fclose:
     push rax
     push rbx
     mov rbx, rax
-    mov rax, sys_close
+    mov rax, sys_data_close
     int 0x80
     pop rbx
     pop rax
@@ -122,6 +121,6 @@ fclose:
 
 section '.sys_exit' executable
 exit:
-    mov rax, sys_exit
+    mov rax, sys_data_exit
     xor rbx, rbx
     int 0x80
