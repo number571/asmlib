@@ -16,5 +16,3 @@ hex: main
 	hexeditor main
 run: main
 	./main
-main.asm:
-	$(error "main.asm undefined")
