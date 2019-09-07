@@ -1,126 +1,187 @@
 format ELF64
 
-include "sys_equ.inc"
-include "sys_prv.inc"
-
 public fcreate
-public fcreatea
+public fdelete
 public fopen
-public fopenm
-public fread
-public freadp
-public fwrite
-public fwritep
 public fclose
+public fwrite
+public fread
+public fseek
+public time
 public exit
 
-section '.sys_fcreate' executable
-; | input
+section '.fcreate' executable
+; | input:
 ; rax = filename
-; | output
+; rbx = permissions
+; | output:
 ; rax = descriptor
 fcreate:
     push rbx
-    mov rbx, 777o
-    call create
+    push rcx
+
+    mov rcx, rbx
+    mov rbx, rax
+    mov rax, 8 ; creat
+    int 0x80
+
+    pop rcx
     pop rbx
     ret
 
-section '.sys_fcreatea' executable
-; | input
+section '.fdelete' executable
+; | input:
 ; rax = filename
-; rbx = access rights
-; | output
-; rax = descriptor
-fcreatea:
-    call create
-    ret
-
-section '.sys_fopen' executable
-; | input
-; rax = filename
-; | output
-; rax = descriptor
-fopen:
-    push rbx
-    mov rbx, sys_rwx_rdwr
-    call open
-    pop rbx
-    ret
-
-section '.sys_fopenm' executable
-; | input
-; rax = filename
-; rbx = mode
-; | output
-; rax = descriptor
-fopenm:
-    call open
-    ret
-
-section '.sys_fread' executable
-; | input
-; rax = descriptor
-; rbx = buffer
-; rcx = buffer size
-fread:
-    push rdx
-    mov rdx, 0
-    call seek
-    call read
-    pop rdx
-    ret
-
-section '.sys_freadp' executable
-; | input
-; rax = descriptor
-; rbx = buffer
-; rcx = buffer size
-; rdx = position
-freadp:
-    call seek
-    call read
-    ret
-
-section '.sys_fwrite' executable
-; | input
-; rax = descriptor
-; rbx = buffer
-; rcx = buffer size
-fwrite:
-    push rdx
-    mov rdx, 0
-    call seek
-    call write
-    pop rdx
-    ret
-
-section '.sys_fwritep' executable
-; | input
-; rax = descriptor
-; rbx = buffer
-; rcx = buffer size
-; rdx = position
-fwritep:
-    call seek
-    call write
-    ret
-
-section '.sys_fclose' executable
-; | input
-; rax = descriptor
-fclose:
+fdelete:
     push rax
     push rbx
+
     mov rbx, rax
-    mov rax, sys_data_close
+    mov rax, 10 ; unlink
     int 0x80
+    
     pop rbx
     pop rax
     ret
 
-section '.sys_exit' executable
+section '.fopen' executable
+; | input:
+; rax = filename
+; rbx = mode
+; ; O_RDONLY = 0
+; ; O_WRONLY = 1
+; ; O_RDWR = 2
+; | output:
+; rax = descriptor
+fopen:
+    push rbx
+    push rcx
+
+    mov rcx, rbx
+    mov rbx, rax
+    mov rax, 5 ; open
+    int 0x80
+
+    pop rcx
+    pop rbx
+    ret
+
+section '.fclose' executable
+; | input:
+; rax = descriptor
+fclose:
+    push rbx
+
+    mov rbx, rax
+    mov rax, 6 ; close
+    int 0x80
+
+    pop rbx
+    ret
+
+section '.fwrite' executable
+; | input:
+; rax = descriptor
+; rbx = data
+; rcx = data size
+fwrite:
+    push rax
+    push rbx
+    push rcx
+    push rdx
+
+    push rbx
+    push rcx
+
+    mov rbx, 1 
+    xor rcx, rcx
+    call fseek
+
+    pop rcx
+    pop rbx
+
+    mov rdx, rcx
+    mov rcx, rbx
+    mov rbx, rax
+    mov rax, 4 ; write
+    int 0x80
+
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+    ret
+
+section '.fread' executable
+; | input:
+; rax = descriptor
+; rbx = buffer
+; rcx = buffer size
+fread:
+    push rax
+    push rbx
+    push rcx
+    push rdx
+
+    push rbx
+    push rcx
+
+    mov rbx, 1 
+    xor rcx, rcx
+    call fseek
+
+    pop rcx
+    pop rbx
+
+    mov rdx, rcx
+    mov rcx, rbx
+    mov rbx, rax
+    mov rax, 3 ; read
+    int 0x80
+
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+    ret
+
+section '.fseek' executable
+; | input:
+; rax = descriptor
+; rbx = mode seek
+; ; SEEK_SET = 0
+; ; SEEK_CUR = 1
+; ; SEEK_END = 2
+; rcx = position
+fseek:
+    push rax
+    push rbx
+    push rdx
+
+    mov rdx, rbx
+    ; rcx 
+    mov rbx, rax
+    mov rax, 19 ; seek
+    int 0x80
+    
+    pop rdx
+    pop rbx
+    pop rax
+    ret
+
+section '.time' executable
+; | ouput:
+; rax = number
+time:
+	push rbx
+	mov rax, 13
+	xor rbx, rbx
+	int 0x80
+	pop rbx	
+	ret
+
+section '.exit' executable
 exit:
-    mov rax, sys_data_exit
-    xor rbx, rbx
+    mov rax, 1
+    mov rbx, 0
     int 0x80

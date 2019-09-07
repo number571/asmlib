@@ -1,10 +1,9 @@
 extrn fcreate
-extrn fcreatea
+extrn fdelete
 extrn fopen
-extrn fopenm
-extrn fread
-extrn freadp
-extrn fwrite
-extrn fwritep
 extrn fclose
+extrn fwrite
+extrn fread
+extrn fseek
+extrn time
 extrn exit
