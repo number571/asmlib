@@ -58,16 +58,13 @@ input_string:
     push rcx
     push rdx
 
-    push rax
-
     mov rcx, rax
     mov rdx, rbx
     mov rax, 3 ; read
     mov rbx, 2 ; stdin
     int 0x80
 
-    pop rbx
-    mov [rbx+rax-1], byte 0
+    mov [rcx+rax-1], byte 0
 
     pop rdx
     pop rcx
