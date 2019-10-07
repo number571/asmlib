@@ -1,3 +1,4 @@
+extrn rpn_interpret
 extrn srand
 extrn rand
 extrn bubble_sort
