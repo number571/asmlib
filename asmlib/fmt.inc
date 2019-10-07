@@ -6,6 +6,7 @@ extrn printf
 extrn print_hex
 extrn print_oct
 extrn print_bin
+extrn print_integer
 extrn print_number
 extrn print_string
 extrn print_char
