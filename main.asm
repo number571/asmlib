@@ -24,8 +24,8 @@ _start:
         call input_string
 
         push rax
-        call readstring
-        cmp rax, 0
+        call readline
+        cmp rax, 1 ; quit code
         je .close
         pop rax
 
@@ -37,12 +37,14 @@ _start:
     .close:
         call exit
 
-section '.readstring' executable
+section '.readline' executable
 ; | input:
 ; rax = string
 ; | output:
 ; rax = number
-readstring:
+; ; 0 = nothing
+; ; 1 = quit
+readline:
     push rcx
     push rsi
     push rdi 
@@ -50,8 +52,16 @@ readstring:
     mov rdi, quit
     mov rcx, 3
     repe cmpsb
-    mov rax, rcx
-    pop rdi
-    pop rsi
-    pop rcx
-    ret
+    cmp rcx, 0
+    je .is_quit
+    jmp .nothing
+    .is_quit:
+        mov rax, 1
+        jmp .close
+    .nothing:
+        mov rax, 0
+    .close:
+        pop rdi
+        pop rsi
+        pop rcx
+        ret
