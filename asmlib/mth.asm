@@ -77,7 +77,7 @@ rpn_interpret:
         je .is_mod ; MOD
         mov rsi, rbx
         mov rdi, _FLIP
-        mov rcx, 4
+        mov rcx, 5
         repe cmpsb 
         cmp rcx, 0
         je .is_flip ; FLIP
