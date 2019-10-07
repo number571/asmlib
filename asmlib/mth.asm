@@ -1,5 +1,6 @@
 format ELF64
 
+public rpn_interpret
 public srand
 public rand
 public bubble_sort
@@ -7,8 +8,209 @@ public gcd
 public fibonacci
 public factorial
 
+include "str.inc"
+
 section '.data' writeable
+    _buffer_size equ 256
+    _buffer rb _buffer_size
+    _ABS  db "ABS", 0
+    _NEG  db "NEG", 0
+    _MOD  db "MOD", 0
+    _FLIP db "FLIP", 0
     _next dq 1
+
+section '.rpn_interpret' executable
+; | input:
+; rax = string
+; | output:
+; rax = number
+rpn_interpret:
+    push rbx
+    push rcx
+    push rdx
+    push rdi
+    push rsi
+    mov rbx, _buffer
+    xor rcx, rcx
+    xor rdx, rdx
+    .next_iter:
+        cmp [rax], byte 0
+        je .is_space
+        cmp [rax], byte ' '
+        je .is_space
+        cmp [rax], byte '+'
+        je .is_plus
+        cmp [rax], byte '-'
+        je .is_minus
+        cmp [rax], byte '*'
+        je .is_mul
+        cmp [rax], byte '/'
+        je .is_div
+        jmp .read_char
+    .is_space:
+        cmp rcx, 0
+        je .check_cond
+        jmp .pass_cond
+    .check_cond:
+        cmp [rax], byte 0
+        je .to_close
+        jmp .next_char
+    .pass_cond:
+        mov [rbx+rcx], byte 0
+        mov rsi, rbx
+        mov rdi, _ABS
+        mov rcx, 4
+        repe cmpsb 
+        cmp rcx, 0
+        je .is_abs ; ABS
+        mov rsi, rbx
+        mov rdi, _NEG
+        mov rcx, 4
+        repe cmpsb 
+        cmp rcx, 0
+        je .is_neg ; NEG
+        mov rsi, rbx
+        mov rdi, _MOD
+        mov rcx, 4
+        repe cmpsb 
+        cmp rcx, 0
+        je .is_mod ; MOD
+        mov rsi, rbx
+        mov rdi, _FLIP
+        mov rcx, 4
+        repe cmpsb 
+        cmp rcx, 0
+        je .is_flip ; FLIP
+        mov rcx, rax
+        mov rax, rbx
+        call string_to_number
+        push rax
+        inc rdx
+        mov rax, rcx
+    .back_to_parse:
+        xor rcx, rcx
+        cmp [rax], byte 0
+        je .to_close
+        jmp .next_char
+    .is_abs:
+        cmp rdx, 1
+        jl .pop_stack
+        pop rdi
+        cmp rdi, 0
+        jl .neg_change
+        jmp .not_change
+        .neg_change:
+            neg rdi
+        .not_change:
+            push rdi
+        jmp .back_to_parse
+    .is_neg:
+        cmp rdx, 1
+        jl .pop_stack
+        pop rdi
+        neg rdi
+        push rdi
+        jmp .back_to_parse
+    .is_mod:
+        cmp rdx, 2
+        jl .pop_stack
+        pop rdi
+        pop rsi
+        push rax
+        push rdx
+        xor rdx, rdx
+        mov rax, rsi
+        div rdi
+        mov rdi, rdx
+        pop rdx
+        pop rax
+        push rdi
+        dec rdx
+        jmp .back_to_parse
+    .is_flip:
+        cmp rdx, 2
+        jl .pop_stack
+        pop rdi
+        pop rsi
+        push rdi
+        push rsi
+        jmp .back_to_parse
+    .is_plus:
+        cmp rdx, 2
+        jl .pop_stack
+        pop rdi
+        pop rsi
+        add rdi, rsi
+        push rdi
+        dec rdx
+        jmp .next_char
+    .is_minus:
+        cmp rdx, 2
+        jl .pop_stack
+        pop rdi
+        pop rsi
+        sub rsi, rdi
+        push rsi
+        dec rdx
+        jmp .next_char
+    .is_mul:
+        cmp rdx, 2
+        jl .pop_stack
+        pop rdi
+        pop rsi
+        imul rdi, rsi
+        push rdi
+        dec rdx
+        jmp .next_char
+    .is_div:
+        cmp rdx, 2
+        jl .pop_stack
+        pop rdi
+        pop rsi
+        push rax
+        push rdx
+        xor rdx, rdx
+        mov rax, rsi
+        div rdi
+        mov rdi, rax
+        pop rdx
+        pop rax
+        push rdi
+        dec rdx
+        jmp .next_char
+    .read_char:
+        cmp rcx, _buffer_size
+        jge .next_char
+        mov rdi, [rax]
+        mov [rbx+rcx], rdi
+        inc rcx
+        jmp .next_char
+    .next_char:
+        inc rax
+        jmp .next_iter
+    .pop_stack:
+        cmp rdx, 0
+        jle .set_error
+        pop rax
+        dec rdx
+        jmp .pop_stack
+    .set_error:
+        push -1
+        jmp .close
+    .to_close:
+        cmp rdx, 0
+        je .set_error
+        cmp rdx, 1
+        jne .pop_stack
+        jmp .close
+    .close:
+        pop rax ; save result
+        pop rsi
+        pop rdi
+        pop rdx
+        pop rcx
+        pop rbx
+        ret
 
 section '.srand' executable
 ; | input:
