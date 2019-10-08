@@ -1,5 +1,6 @@
 format ELF64
 
+public roman_numeral
 public numbers_vector
 public rpn_interpret
 public srand
@@ -19,6 +20,130 @@ section '.data' writeable
     _MOD  db "MOD", 0
     _FLIP db "FLIP", 0
     _next dq 1
+
+section '.roman_numeral' executable
+; | input:
+; rax = string
+; | output:
+; rax = number
+roman_numeral:
+    push rbx
+    push rcx
+    push rdx
+    push 0
+    xor rcx, rcx
+    xor rbx, rbx ; accumulator
+    .next_iter:
+        cmp [rax], byte 0
+        je .close
+        cmp [rax], byte 'I'
+        je .is_1
+        cmp [rax], byte 'V'
+        je .is_5
+        cmp [rax], byte 'X'
+        je .is_10
+        cmp [rax], byte 'L'
+        je .is_50
+        cmp [rax], byte 'C'
+        je .is_100
+        cmp [rax], byte 'D'
+        je .is_500
+        cmp [rax], byte 'M'
+        je .is_1000
+        jmp .next_step
+    .is_1:
+        pop rdx
+        push 1
+        cmp rdx, 0
+        je .add_1
+        cmp rdx, 1
+        jge .add_1
+        jmp .next_step
+        .add_1:
+            inc rbx
+        jmp .next_step
+    .is_5:
+        pop rdx
+        push 5
+        cmp rdx, 0
+        je .add_5
+        cmp rdx, 5
+        jge .add_5
+        sub rbx, rdx
+        sub rbx, rdx
+        .add_5:
+            add rbx, 5
+        jmp .next_step
+    .is_10:
+        pop rdx
+        push 10
+        cmp rdx, 0
+        je .add_10
+        cmp rdx, 10
+        jge .add_10
+        sub rbx, rdx
+        sub rbx, rdx
+        .add_10:
+            add rbx, 10
+        jmp .next_step
+    .is_50:
+        pop rdx
+        push 50
+        cmp rdx, 0
+        je .add_50
+        cmp rdx, 50
+        jge .add_50
+        sub rbx, rdx
+        sub rbx, rdx
+        .add_50:
+            add rbx, 50
+        jmp .next_step
+    .is_100:
+        pop rdx
+        push 100
+        cmp rdx, 0
+        je .add_100
+        cmp rdx, 100
+        jge .add_100
+        sub rbx, rdx
+        sub rbx, rdx
+        .add_100:
+            add rbx, 100
+        jmp .next_step
+    .is_500:
+        pop rdx
+        push 500
+        cmp rdx, 0
+        je .add_500
+        cmp rdx, 500
+        jge .add_500
+        sub rbx, rdx
+        sub rbx, rdx
+        .add_500:
+            add rbx, 500
+        jmp .next_step
+    .is_1000:
+        pop rdx
+        push 1000
+        cmp rdx, 0
+        je .add_1000
+        cmp rdx, 1000
+        jge .add_1000
+        sub rbx, rdx
+        sub rbx, rdx
+        .add_1000:
+            add rbx, 1000
+        jmp .next_step
+    .next_step:
+        inc rax
+        jmp .next_iter
+    .close:
+        mov rax, rbx
+        pop rdx
+        pop rdx
+        pop rcx
+        pop rbx
+        ret
 
 section '.numbers_vector' executable
 ; | input:
