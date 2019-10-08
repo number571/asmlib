@@ -1,3 +1,4 @@
+extrn numbers_vector
 extrn rpn_interpret
 extrn srand
 extrn rand
