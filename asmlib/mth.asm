@@ -1,5 +1,6 @@
 format ELF64
 
+public numbers_vector
 public rpn_interpret
 public srand
 public rand
@@ -18,6 +19,92 @@ section '.data' writeable
     _MOD  db "MOD", 0
     _FLIP db "FLIP", 0
     _next dq 1
+
+section '.numbers_vector' executable
+; | input:
+; rax = string
+; rbx = buffer
+; | output:
+; rax = length
+numbers_vector:
+    push rcx
+    push rdx
+    push rsi
+    xor rsi, rsi
+    mov rdx, rax
+    .pass_spaces:
+        cmp [rdx], byte 0
+        je .close
+        cmp [rdx], byte ' '
+        je .pass
+        cmp [rdx], byte ','
+        je .pass
+        jmp .read
+    .pass:
+        inc rdx
+        jmp .pass_spaces
+    .read:
+        xor rcx, rcx
+        .while_is_number:
+            cmp [rdx+rcx], byte 0
+            je .break_while
+            cmp [rdx+rcx], byte ' '
+            je .break_while
+            cmp [rdx+rcx], byte ','
+            je .break_while
+            inc rcx
+            jmp .while_is_number
+        .break_while:
+            cmp [rdx+rcx], byte 0
+            je .continue
+            jmp .is_not_end
+        .is_not_end:
+            mov [rdx+rcx], byte 0
+            inc rcx
+        .continue:
+            xor rax, rax
+            .read_line:
+                cmp rax, rcx
+                jge .next_step
+                cmp [rdx+rax], byte '-'
+                je .is_range
+                inc rax
+                jmp .read_line
+        .is_range:
+            sub rcx, 2
+            push rcx
+            mov [rdx+rax], byte 0
+            inc rax
+            push rax
+            mov rax, rdx
+            call string_to_number
+            mov rcx, rax
+            pop rax
+            add rdx, rax
+            mov rax, rdx
+            call string_to_number
+            .generate_range:
+                cmp rcx, rax
+                jge .close_generate
+                mov [rbx+rsi*8], rcx
+                inc rsi
+                inc rcx
+                jmp .generate_range
+        .close_generate:
+            pop rcx
+        .next_step:
+            mov rax, rdx
+            call string_to_number
+            mov [rbx+rsi*8], rax
+            inc rsi
+            add rdx, rcx
+            jmp .pass_spaces
+    .close:
+        mov rax, rsi
+        pop rsi
+        pop rdx
+        pop rcx
+        ret
 
 section '.rpn_interpret' executable
 ; | input:
