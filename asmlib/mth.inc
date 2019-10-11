@@ -1,5 +1,6 @@
 extrn roman_numeral
 extrn numbers_vector
+extrn lisp_interpret
 extrn rpn_interpret
 extrn srand
 extrn rand
