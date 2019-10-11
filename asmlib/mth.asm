@@ -2,6 +2,7 @@ format ELF64
 
 public roman_numeral
 public numbers_vector
+public lisp_interpret
 public rpn_interpret
 public srand
 public rand
@@ -14,13 +15,15 @@ include "str.inc"
 
 section '.data' writeable
     _buffer_size equ 256
-    _buffer rb _buffer_size
+    _buffer1 rb _buffer_size
+    _buffer2 rq _buffer_size
     _ABS  db "ABS", 0
     _NEG  db "NEG", 0
     _MOD  db "MOD", 0
     _FLIP db "FLIP", 0
     _next dq 1
 
+; EXAMPLE: "CMLIX" = 959
 section '.roman_numeral' executable
 ; | input:
 ; rax = string
@@ -145,6 +148,7 @@ roman_numeral:
         pop rbx
         ret
 
+; EXAMPLE: "1-5,7,9-11" = [1,2,3,4,5,7,9,10,11]
 section '.numbers_vector' executable
 ; | input:
 ; rax = string
@@ -231,6 +235,116 @@ numbers_vector:
         pop rcx
         ret
 
+
+section '.lisp_interpret' executable
+; | input:
+; rax = string
+; | output:
+; rax = number
+lisp_interpret:
+    push rbx
+    push rcx
+    push rdx
+    push rsi
+    mov rsi, rax
+    xor rdx, rdx ; buffers index
+    .next_iter:
+        cmp [rsi], byte 0
+        je .close
+        cmp [rsi], byte ' '
+        je .next_step
+        cmp [rsi], byte '('
+        je .open_expression
+        cmp [rsi], byte ')'
+        je .close_expression
+        jmp .push_value
+    .open_expression:
+        inc rdx
+        inc rsi
+        mov bl, [rsi]
+        mov [_buffer2+rdx*8], 0
+        mov [_buffer1+rdx], bl
+        jmp .next_step
+    .close_expression:
+        mov rcx, [_buffer2+rdx*8]
+        .next_iter_exp:
+            cmp rcx, 1
+            jle .close_exp
+            pop rbx
+            pop rax
+            cmp [_buffer1+rdx], byte '+'
+            je .is_add
+            cmp [_buffer1+rdx], byte '*'
+            je .is_mul
+            cmp [_buffer1+rdx], byte '-'
+            je .is_sub
+            cmp [_buffer1+rdx], byte '/'
+            je .is_div
+            jmp .next_step_exp
+        .is_add:
+            add rax, rbx
+            jmp .next_step_exp
+        .is_mul:
+            imul rax, rbx
+            jmp .next_step_exp
+        .is_sub:
+            cmp rcx, 3
+            jge .is_add
+            sub rax, rbx
+            jmp .next_step_exp
+        .is_div:
+            cmp rcx, 3
+            jge .is_mul
+            push rdx
+            xor rdx, rdx
+            div rbx
+            pop rdx
+            jmp .next_step_exp
+        .next_step_exp:
+            push rax
+            dec rcx
+            jmp .next_iter_exp
+        .close_exp:
+            dec rdx
+            mov rbx, [_buffer2+rdx*8]
+            inc rbx
+            mov [_buffer2+rdx*8], rbx
+            jmp .next_step
+    .push_value:
+        xor rcx, rcx
+        .read_value:
+            cmp [rsi+rcx], byte ' '
+            je .read_close
+            cmp [rsi+rcx], byte '('
+            je .read_close
+            cmp [rsi+rcx], byte ')'
+            je .read_close
+            inc rcx
+            jmp .read_value
+        .read_close:
+            push qword [rsi+rcx]
+            mov [rsi+rcx], byte 0
+            mov rax, rsi
+            call string_to_number
+            pop qword [rsi+rcx]
+            add rsi, rcx
+            push rax
+            mov rbx, [_buffer2+rdx*8]
+            inc rbx
+            mov [_buffer2+rdx*8], rbx
+        jmp .next_iter
+    .next_step:
+        inc rsi
+        jmp .next_iter
+    .close:
+        pop rax
+        pop rsi 
+        pop rdx
+        pop rcx
+        pop rbx
+        ret
+
+; EXAMPLE: "2 3 4 * 5 + NEG -" = 19
 section '.rpn_interpret' executable
 ; | input:
 ; rax = string
@@ -242,7 +356,7 @@ rpn_interpret:
     push rdx
     push rdi
     push rsi
-    mov rbx, _buffer
+    mov rbx, _buffer1
     xor rcx, rcx
     xor rdx, rdx
     .next_iter:
