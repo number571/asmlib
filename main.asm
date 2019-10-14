@@ -29,7 +29,7 @@ _start:
         je .close
         pop rax
 
-        call rpn_interpret
+        call interpret_rpn
         call print_integer
         call print_line
         jmp .next_iter
