@@ -2,8 +2,8 @@ format ELF64
 
 public roman_numeral
 public numbers_vector
-public lisp_interpret
-public rpn_interpret
+public interpret_lisp
+public interpret_rpn
 public srand
 public rand
 public bubble_sort
@@ -17,6 +17,10 @@ section '.data' writeable
     _buffer_size equ 256
     _buffer1 rb _buffer_size
     _buffer2 rq _buffer_size
+    _ADD db "+", 0
+    _SUB db "-", 0
+    _MUL db "*", 0
+    _DIV db "/", 0
     _ABS  db "ABS", 0
     _NEG  db "NEG", 0
     _MOD  db "MOD", 0
@@ -235,13 +239,12 @@ numbers_vector:
         pop rcx
         ret
 
-
-section '.lisp_interpret' executable
+section '.interpret_lisp' executable
 ; | input:
 ; rax = string
 ; | output:
 ; rax = number
-lisp_interpret:
+interpret_lisp:
     push rbx
     push rcx
     push rdx
@@ -345,198 +348,153 @@ lisp_interpret:
         ret
 
 ; EXAMPLE: "2 3 4 * 5 + NEG -" = 19
-section '.rpn_interpret' executable
+section '.interpret_rpn' executable
 ; | input:
 ; rax = string
 ; | output:
 ; rax = number
-rpn_interpret:
+interpret_rpn:
     push rbx
     push rcx
     push rdx
     push rdi
     push rsi
-    mov rbx, _buffer1
-    xor rcx, rcx
-    xor rdx, rdx
+    push r8
+    push r9
+    mov rdx, rax
     .next_iter:
-        cmp [rax], byte 0
-        je .is_space
-        cmp [rax], byte ' '
-        je .is_space
-        cmp [rax], byte '+'
-        je .is_plus
-        cmp [rax], byte '-'
-        je .is_minus
-        cmp [rax], byte '*'
-        je .is_mul
-        cmp [rax], byte '/'
-        je .is_div
-        jmp .read_char
-    .is_space:
-        cmp rcx, 0
-        je .check_cond
-        jmp .pass_cond
-    .check_cond:
-        cmp [rax], byte 0
-        je .to_close
-        jmp .next_char
-    .pass_cond:
-        mov [rbx+rcx], byte 0
-        mov rsi, rbx
-        mov rdi, _ABS
-        mov rcx, 4
-        repe cmpsb 
-        cmp rcx, 0
-        je .is_abs ; ABS
-        mov rsi, rbx
-        mov rdi, _NEG
-        mov rcx, 4
-        repe cmpsb 
-        cmp rcx, 0
-        je .is_neg ; NEG
-        mov rsi, rbx
-        mov rdi, _MOD
-        mov rcx, 4
-        repe cmpsb 
-        cmp rcx, 0
-        je .is_mod ; MOD
-        mov rsi, rbx
-        mov rdi, _FLIP
-        mov rcx, 5
-        repe cmpsb 
-        cmp rcx, 0
-        je .is_flip ; FLIP
-        mov rcx, rax
-        mov rax, rbx
-        call string_to_number
-        push rax
-        inc rdx
-        mov rax, rcx
-    .back_to_parse:
-        xor rcx, rcx
-        cmp [rax], byte 0
-        je .to_close
-        jmp .next_char
-    .is_abs:
-        cmp rdx, 1
-        jl .pop_stack
-        pop rdi
-        cmp rdi, 0
-        jl .neg_change
-        jmp .not_change
-        .neg_change:
-            neg rdi
-        .not_change:
-            push rdi
-        jmp .back_to_parse
-    .is_neg:
-        cmp rdx, 1
-        jl .pop_stack
-        pop rdi
-        neg rdi
-        push rdi
-        jmp .back_to_parse
-    .is_mod:
-        cmp rdx, 2
-        jl .pop_stack
-        pop rdi
-        pop rsi
-        push rax
-        push rdx
-        xor rdx, rdx
-        mov rax, rsi
-        div rdi
-        mov rdi, rdx
-        pop rdx
-        pop rax
-        push rdi
-        dec rdx
-        jmp .back_to_parse
-    .is_flip:
-        cmp rdx, 2
-        jl .pop_stack
-        pop rdi
-        pop rsi
-        push rdi
-        push rsi
-        jmp .back_to_parse
-    .is_plus:
-        cmp rdx, 2
-        jl .pop_stack
-        pop rdi
-        pop rsi
-        add rdi, rsi
-        push rdi
-        dec rdx
-        jmp .next_char
-    .is_minus:
-        cmp rdx, 2
-        jl .pop_stack
-        pop rdi
-        pop rsi
-        sub rsi, rdi
-        push rsi
-        dec rdx
-        jmp .next_char
-    .is_mul:
-        cmp rdx, 2
-        jl .pop_stack
-        pop rdi
-        pop rsi
-        imul rdi, rsi
-        push rdi
-        dec rdx
-        jmp .next_char
-    .is_div:
-        cmp rdx, 2
-        jl .pop_stack
-        pop rdi
-        pop rsi
-        push rax
-        push rdx
-        xor rdx, rdx
-        mov rax, rsi
-        div rdi
-        mov rdi, rax
-        pop rdx
-        pop rax
-        push rdi
-        dec rdx
-        jmp .next_char
-    .read_char:
-        cmp rcx, _buffer_size
-        jge .next_char
-        mov rdi, [rax]
-        mov [rbx+rcx], rdi
+        cmp [rdx], byte 0
+        je .close
+        cmp [rdx], byte ' '
+        je .inc_point
+    xor rcx, rcx
+    .read_value:
+        cmp [rdx+rcx], byte 0
+        je .close_read
+        cmp [rdx+rcx], byte ' '
+        je .close_read
         inc rcx
-        jmp .next_char
-    .next_char:
-        inc rax
-        jmp .next_iter
-    .pop_stack:
-        cmp rdx, 0
-        jle .set_error
+        jmp .read_value
+    .close_read:
+        mov r8b, [rdx+rcx]
+        mov [rdx+rcx], byte 0
+        mov r9, rcx
+        inc r9
+        ; ADD
+        mov rsi, rdx
+        mov rdi, _ADD
+        mov rcx, r9
+        repe cmpsb
+        cmp rcx, 0
+        je .is_add
+        ; SUB
+        mov rsi, rdx
+        mov rdi, _SUB
+        mov rcx, r9
+        repe cmpsb
+        cmp rcx, 0
+        je .is_sub
+        ; MUL
+        mov rsi, rdx
+        mov rdi, _MUL
+        mov rcx, r9
+        repe cmpsb
+        cmp rcx, 0
+        je .is_mul
+        ; DIV
+        mov rsi, rdx
+        mov rdi, _DIV
+        mov rcx, r9
+        repe cmpsb
+        cmp rcx, 0
+        je .is_div
+        ; ABS
+        mov rsi, rdx
+        mov rdi, _ABS
+        mov rcx, r9
+        repe cmpsb
+        cmp rcx, 0
+        je .is_abs
+        ; NEG
+        mov rsi, rdx
+        mov rdi, _NEG
+        mov rcx, r9
+        repe cmpsb
+        cmp rcx, 0
+        je .is_neg
+        ; FLIP
+        mov rsi, rdx
+        mov rdi, _FLIP
+        mov rcx, r9
+        repe cmpsb
+        cmp rcx, 0
+        je .is_flip
+        jmp .is_num
+    .is_add:
         pop rax
-        dec rdx
-        jmp .pop_stack
-    .set_error:
-        push -1
-        jmp .close
-    .to_close:
-        cmp rdx, 0
-        je .set_error
-        cmp rdx, 1
-        jne .pop_stack
-        jmp .close
+        pop rbx
+        add rax, rbx
+        jmp .next_step
+    .is_sub:
+        pop rbx
+        pop rax
+        sub rax, rbx
+        jmp .next_step
+    .is_mul:
+        pop rax
+        pop rbx
+        imul rax, rbx
+        jmp .next_step
+    .is_div:
+        pop rbx
+        pop rax
+        push rdx
+        xor rdx, rdx
+        div rbx
+        pop rdx
+        jmp .next_step
+    .is_abs:
+        pop rax
+        cmp rax, 0
+        jl .to_neg
+        jmp .to_pass
+    .to_neg:
+        neg rax
+    .to_pass:
+        jmp .next_step
+    .is_neg:
+        pop rax
+        neg rax
+        jmp .next_step
+    .is_flip:
+        pop rbx
+        pop rax
+        push rbx
+        jmp .next_step
+    .is_num:
+        mov rax, rdx
+        call string_to_number
+        jmp .next_step
+    .next_step:
+        push rax
+        dec r9
+        mov [rdx+r9], r8b
+        add rdx, r9
+        jmp .next_iter
+    .inc_point:
+        inc rdx
+        jmp .next_iter
     .close:
-        pop rax ; save result
+        pop rax ; result
+        pop r9
+        pop r8
         pop rsi
         pop rdi
         pop rdx
         pop rcx
         pop rbx
         ret
+
 
 section '.srand' executable
 ; | input:
