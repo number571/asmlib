@@ -1,7 +1,7 @@
 extrn roman_numeral
 extrn numbers_vector
-extrn lisp_interpret
-extrn rpn_interpret
+extrn interpret_lisp
+extrn interpret_rpn
 extrn srand
 extrn rand
 extrn bubble_sort
