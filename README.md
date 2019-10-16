@@ -35,5 +35,7 @@ _start:
 $ fasm main.asm
 $ ld main.o asmlib/fmt.o asmlib/str.o asmlib/sys.o asmlib/mth.o -o main
 $ ./main
+$ # or just use Makefile
+$ # make
 57
 ```
