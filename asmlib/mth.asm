@@ -16,14 +16,13 @@ include "str.inc"
 section '.data' writeable
     _buffer_size equ 256
     _buffer1 rb _buffer_size
-    _buffer2 rq _buffer_size
+    _buffer2 rb _buffer_size
     _ADD db "+", 0
     _SUB db "-", 0
     _MUL db "*", 0
     _DIV db "/", 0
     _ABS  db "ABS", 0
     _NEG  db "NEG", 0
-    _MOD  db "MOD", 0
     _FLIP db "FLIP", 0
     _next dq 1
 
@@ -249,102 +248,174 @@ interpret_lisp:
     push rcx
     push rdx
     push rsi
-    mov rsi, rax
-    xor rdx, rdx ; buffers index
+    push rdi
+    push r8
+    xor r8, r8
+    mov rdx, rax
     .next_iter:
-        cmp [rsi], byte 0
+        cmp [rdx], byte 0
         je .close
-        cmp [rsi], byte ' '
-        je .next_step
-        cmp [rsi], byte '('
+        cmp [rdx], byte ' '
+        je .inc_point
+        cmp [rdx], byte '('
         je .open_expression
-        cmp [rsi], byte ')'
+        cmp [rdx], byte ')'
         je .close_expression
-        jmp .push_value
-    .open_expression:
+        jmp .read_arguments
+    .inc_point:
         inc rdx
-        inc rsi
-        mov bl, [rsi]
-        mov [_buffer2+rdx*8], 0
-        mov [_buffer1+rdx], bl
+        jmp .next_iter
+    .open_expression:
+        inc r8
+        inc rdx
+        call word_length_lisp
+        mov bl, [rdx+rax]
+        mov [rdx+rax], byte 0
+        inc rax
+        ; ADD
+        mov rsi, rdx
+        mov rdi, _ADD
+        mov rcx, rax
+        repe cmpsb
+        cmp rcx, 0
+        je .append_add
+        ; SUB
+        mov rsi, rdx
+        mov rdi, _SUB
+        mov rcx, rax
+        repe cmpsb
+        cmp rcx, 0
+        je .append_sub
+        ; MUL
+        mov rsi, rdx
+        mov rdi, _MUL
+        mov rcx, rax
+        repe cmpsb
+        cmp rcx, 0
+        je .append_mul
+        ; DIV
+        mov rsi, rdx
+        mov rdi, _DIV
+        mov rcx, rax
+        repe cmpsb
+        cmp rcx, 0
+        je .append_div
+    .next_step:
+        dec rax
+        mov [rdx+rax], bl
+        mov [_buffer2+r8], 0
+        add rdx, rax
+        jmp .next_iter
+    .append_add:
+        mov [_buffer1+r8], '+'
+        jmp .next_step
+    .append_sub:
+        mov [_buffer1+r8], '-'
+        jmp .next_step
+    .append_mul:
+        mov [_buffer1+r8], '*'
+        jmp .next_step
+    .append_div:
+        mov [_buffer1+r8], '/'
         jmp .next_step
     .close_expression:
-        mov rcx, [_buffer2+rdx*8]
-        .next_iter_exp:
-            cmp rcx, 1
-            jle .close_exp
-            pop rbx
-            pop rax
-            cmp [_buffer1+rdx], byte '+'
+        inc rdx
+        mov cl, [_buffer2+r8]
+        .pop_elements:
+            cmp cl, 1
+            jle .close_pop
+            dec cl
+            cmp [_buffer1+r8], '+'
             je .is_add
-            cmp [_buffer1+rdx], byte '*'
-            je .is_mul
-            cmp [_buffer1+rdx], byte '-'
+            cmp [_buffer1+r8], '-'
             je .is_sub
-            cmp [_buffer1+rdx], byte '/'
+            cmp [_buffer1+r8], '*'
+            je .is_mul
+            cmp [_buffer1+r8], '/'
             je .is_div
-            jmp .next_step_exp
+            jmp .pop_elements
         .is_add:
+            pop rax
+            pop rbx
             add rax, rbx
-            jmp .next_step_exp
-        .is_mul:
-            imul rax, rbx
-            jmp .next_step_exp
+            push rax
+            jmp .pop_elements
         .is_sub:
-            cmp rcx, 3
-            jge .is_add
-            sub rax, rbx
-            jmp .next_step_exp
+            cmp cl, 1
+            jle .to_sub
+            jmp .is_add
+            .to_sub:
+                pop rbx
+                pop rax
+                sub rax, rbx
+                push rax
+            jmp .pop_elements
+        .is_mul:
+            pop rax
+            pop rbx
+            imul rax, rbx
+            push rax
+            jmp .pop_elements
         .is_div:
-            cmp rcx, 3
-            jge .is_mul
-            push rdx
-            xor rdx, rdx
-            div rbx
-            pop rdx
-            jmp .next_step_exp
-        .next_step_exp:
-            push rax
-            dec rcx
-            jmp .next_iter_exp
-        .close_exp:
-            dec rdx
-            mov rbx, [_buffer2+rdx*8]
-            inc rbx
-            mov [_buffer2+rdx*8], rbx
-            jmp .next_step
-    .push_value:
-        xor rcx, rcx
-        .read_value:
-            cmp [rsi+rcx], byte ' '
-            je .read_close
-            cmp [rsi+rcx], byte '('
-            je .read_close
-            cmp [rsi+rcx], byte ')'
-            je .read_close
-            inc rcx
-            jmp .read_value
-        .read_close:
-            push qword [rsi+rcx]
-            mov [rsi+rcx], byte 0
-            mov rax, rsi
-            call string_to_number
-            pop qword [rsi+rcx]
-            add rsi, rcx
-            push rax
-            mov rbx, [_buffer2+rdx*8]
-            inc rbx
-            mov [_buffer2+rdx*8], rbx
+            cmp cl, 1
+            jle .to_div
+            jmp .is_mul
+            .to_div:
+                pop rbx
+                pop rax
+                push rdx
+                xor rdx, rdx
+                div rbx
+                pop rdx
+                push rax
+            jmp .pop_elements
+        .close_pop:
+            dec r8
+            mov cl, [_buffer2+r8]
+            inc cl
+            mov [_buffer2+r8], cl
         jmp .next_iter
-    .next_step:
-        inc rsi
+    .read_arguments:
+        mov cl, [_buffer2+r8]
+        inc cl
+        mov [_buffer2+r8], cl
+        call word_length_lisp
+        mov rcx, rax
+        mov bl, [rdx+rcx]
+        mov [rdx+rcx], byte 0
+        mov rax, rdx
+        call string_to_number
+        push rax
+        mov [rdx+rcx], bl
+        add rdx, rcx
         jmp .next_iter
     .close:
-        pop rax
+        pop rax ; result
+        pop r8
+        pop rdi 
         pop rsi 
         pop rdx
         pop rcx
         pop rbx
+        ret
+
+section '.word_length_lisp' executable
+; | input:
+; rdx = string
+; | output:
+; rax = number
+word_length_lisp:
+    xor rax, rax
+    .next_iter:
+        cmp [rdx+rax], byte ' '
+        je .close
+        cmp [rdx+rax], byte '('
+        je .close
+        cmp [rdx+rax], byte ')'
+        je .close
+        inc rax
+        jmp .next_iter
+    .close:
         ret
 
 ; EXAMPLE: "2 3 4 * 5 + NEG -" = 19
