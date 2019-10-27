@@ -1,7 +1,7 @@
 # ASMLIB
-> Little libraries for assembly language (dialect FASM).
+> Little library for assembly language (dialect FASM).
 
-### Libraries:
+### Library:
 ```
 1. fmt
 2. str
@@ -9,13 +9,13 @@
 4. sys
 ```
 
-### Library needs object files:
+### Compile library:
 ```
 $ cd asmlib/
-$ # make compile
+$ make compile
 ```
 
-### Example:
+### Example (RPN interpret):
 ```asm
 format ELF64
 public _start
