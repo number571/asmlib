@@ -18,24 +18,20 @@ _start:
     .next_iter:
         mov rax, console
         call print_string
-
         mov rax, input
         mov rbx, input_size
         call input_string
-
         push rax
         call readline
         cmp rax, 1 ; quit code
         je .close
         pop rax
-
         call interpret_rpn
         call print_integer
         call print_line
         jmp .next_iter
-
     .close:
-        call exit
+        jmp exit
 
 section '.readline' executable
 ; | input:
