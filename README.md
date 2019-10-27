@@ -1,14 +1,6 @@
 # ASMLIB
 > Little library for assembly language (dialect FASM).
 
-### Library:
-```
-1. fmt
-2. str
-3. mth
-4. sys
-```
-
 ### Compile library:
 ```
 $ cd asmlib/
