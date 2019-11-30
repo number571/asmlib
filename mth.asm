@@ -2,6 +2,7 @@ format ELF64
 
 public modulo
 public pow
+public powmod
 public euler
 public roman_numeral
 public numbers_vector
@@ -42,6 +43,46 @@ modulo:
     mov rax, rdx
     pop rdx
     ret
+
+section '.powmod' executable
+; | input:
+; rax = number 1 (x)
+; rbx = number 2 (y)
+; rcx = number 3 (n)
+; | output:
+; rax = number
+powmod:
+    push rbx
+    push rdx
+    mov rdx, 1
+    .next_iter:
+        cmp rbx, 0
+        je .close
+        push rbx
+        and rbx, 1
+        cmp rbx, 1
+        je .mulpow
+        jmp .next
+    .mulpow:
+        push rax
+        imul rdx, rax
+        mov rax, rdx
+        mov rbx, rcx
+        call modulo
+        mov rdx, rax
+        pop rax
+    .next:
+        imul rax, rax
+        mov rbx, rcx
+        call modulo
+        pop rbx
+        shr rbx, 1
+        jmp .next_iter
+    .close:
+        mov rax, rdx
+        pop rdx
+        pop rbx
+        ret
 
 section '.pow' executable
 ; | input:
