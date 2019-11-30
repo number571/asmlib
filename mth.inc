@@ -1,3 +1,4 @@
+extrn modulo
 extrn pow
 extrn euler
 extrn roman_numeral
