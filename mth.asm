@@ -1,5 +1,6 @@
 format ELF64
 
+public pow
 public euler
 public roman_numeral
 public numbers_vector
@@ -26,6 +27,27 @@ section '.data' writeable
     _NEG  db "NEG", 0
     _FLIP db "FLIP", 0
     _next dq 1
+
+section '.pow' executable
+; | input:
+; rax = number 1
+; rbx = number 2
+; | output:
+; rax = number
+pow:
+    push rbx
+    push rcx
+    mov rcx, rax
+    .next_iter:
+        cmp rbx, 1
+        jbe .close
+        imul rax, rcx
+        dec rbx
+        jmp .next_iter
+    .close:
+        pop rcx
+        pop rbx
+        ret
 
 section '.euler' executable
 ; | input:
