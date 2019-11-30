@@ -1,3 +1,4 @@
+extrn euler
 extrn roman_numeral
 extrn numbers_vector
 extrn interpret_lisp
