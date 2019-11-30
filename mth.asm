@@ -1,5 +1,6 @@
 format ELF64
 
+public euler
 public roman_numeral
 public numbers_vector
 public interpret_lisp
@@ -25,6 +26,37 @@ section '.data' writeable
     _NEG  db "NEG", 0
     _FLIP db "FLIP", 0
     _next dq 1
+
+section '.euler' executable
+; | input:
+; rax = number
+; | output:
+; rax = number
+euler:
+    push rbx
+    push rcx
+    mov rbx, 1
+    xor rcx, rcx
+    ; [1:rax-1]
+    .next_iter:
+        cmp rbx, rax
+        jae .close
+        push rax
+        call gcd
+        cmp rax, 1
+        je .is_mutually_simple
+        jmp .next
+    .is_mutually_simple:
+        inc rcx
+    .next:
+        pop rax
+        inc rbx
+        jmp .next_iter
+    .close:
+        mov rax, rcx
+        pop rcx
+        pop rbx
+        ret
 
 ; EXAMPLE: "CMLIX" = 959
 section '.roman_numeral' executable
