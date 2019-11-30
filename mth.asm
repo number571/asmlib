@@ -1,5 +1,6 @@
 format ELF64
 
+public modulo
 public pow
 public euler
 public roman_numeral
@@ -27,6 +28,20 @@ section '.data' writeable
     _NEG  db "NEG", 0
     _FLIP db "FLIP", 0
     _next dq 1
+
+section '.modulo' executable
+; | input:
+; rax = number 1
+; rbx = number 2
+; | output:
+; rax = number
+modulo:
+    push rdx
+    xor rdx, rdx
+    div rbx
+    mov rax, rdx
+    pop rdx
+    ret
 
 section '.pow' executable
 ; | input:
