@@ -1,5 +1,6 @@
 extrn modulo
 extrn pow
+extrn powmod
 extrn euler
 extrn roman_numeral
 extrn numbers_vector
