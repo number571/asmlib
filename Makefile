@@ -1,6 +1,6 @@
 CC = fasm
-LIBS = fmt.asm mth.asm str.asm sys.asm
+LIBS = fmt.asm mth.asm irp.asm str.asm sys.asm
 .PHONY: default compile
 default: compile
 compile: $(LIBS)
-	$(CC) fmt.asm && $(CC) mth.asm && $(CC) str.asm && $(CC) sys.asm
+	$(CC) fmt.asm && $(CC) mth.asm && $(CC) irp.asm && $(CC) str.asm && $(CC) sys.asm
