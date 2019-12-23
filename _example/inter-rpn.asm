@@ -2,7 +2,7 @@ format ELF64
 public _start
 
 include "asmlib/fmt.inc"
-include "asmlib/mth.inc"
+include "asmlib/irp.inc"
 include "asmlib/sys.inc"
 
 section '.bss' writeable

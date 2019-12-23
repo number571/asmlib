@@ -13,7 +13,7 @@ format ELF64
 public _start
 
 include "asmlib/fmt.inc"
-include "asmlib/mth.inc"
+include "asmlib/irp.inc"
 include "asmlib/sys.inc"
 
 section '.bss' writeable
@@ -42,7 +42,7 @@ _start:
         call print_line
         jmp .next_iter
     .close:
-        call exit
+        jmp exit
 
 section '.readline' executable
 ; | input:

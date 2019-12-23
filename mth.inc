@@ -2,10 +2,6 @@ extrn modulo
 extrn pow
 extrn powmod
 extrn euler
-extrn roman_numeral
-extrn numbers_vector
-extrn interpret_lisp
-extrn interpret_rpn
 extrn srand
 extrn rand
 extrn bubble_sort
