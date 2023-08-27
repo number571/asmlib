@@ -1,5 +1,8 @@
 # ASMLIB
-> Little library for assembly language (dialect FASM).
+
+> Little library for assembly language (dialect FASM)
+
+> More information about asmlib in the [youtube.com/watch?v=TuNiVG2hYuU](https://www.youtube.com/watch?v=TuNiVG2hYuU "asmlib")
 
 ### Compile library:
 ```
